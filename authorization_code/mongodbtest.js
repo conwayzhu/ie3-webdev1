@@ -1,47 +1,24 @@
-var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/test');
 
-var db = mongoose.connection;
-db.on('error', console.error.bind(console,'connection error:'));
-db.once('open', function() {
-    console.log('we are connected!');
-});
-
-var mySchema = mongoose.Schema({
-    name: String
-});
-
-mySchema.methods.speak = function() {
-    console.log('Im not your buddy, guy.');
-}
-
-var Buddy = mongoose.model('Buddy',mySchema);
-
-var guy = new Buddy({name: 'not your buddy guy'});
-Buddy.find({name: 'not your buddy guy'}).remove().exec();
-
-guy.save(function (err, guy) {
-    if(err) return console.error(err);
-    guy.speak();
-});
-
-Buddy.find(function(err,buddies) {
-    if(err) console.log(err);
-    console.log(buddies);
-
-});
+/*
 //Web server test
 var MongoClient = require('mongodb').MongoClient;
 
-var uri = "mongodb://IEEE123:TxPCrrXADKv7YGh5@cluster0-shard-00-00-u50s6.mongodb.net:27017,cluster0-shard-00-01-u50s6.mongodb.net:27017,cluster0-shard-00-02-u50s6.mongodb.net:27017/test?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin";
-var pwr = "TxPCrrXADKv7YGh5";
+//var uri = "mongodb://IEEE123:TxPCrrXADKv7YGh5@cluster0-shard-00-00-u50s6.mongodb.net:27017,cluster0-shard-00-01-u50s6.mongodb.net:27017,cluster0-shard-00-02-u50s6.mongodb.net:27017/test?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin";
+//var pwr = "TxPCrrXADKv7YGh5";
+
+//mlab uri stuff
+var username = "ieeejasonliu";
+var pword = "kappa123";
+
+var uri = "mongodb://"+username+":"+pword+"@ds121896.mlab.com:21896/ieeespotify";
+
 MongoClient.connect(uri, function(err, db) {
     // Paste the following examples here
     if(err) {
         console.log(err);
     }
     else {
-        console.log("MongoDB atlas connected");
+        console.log("MongoDB connected");
         db.collection('inventory').deleteMany({});
         db.collection('inventory').insertMany([
             // MongoDB adds the _id field with an ObjectId if _id is not present
@@ -65,6 +42,7 @@ MongoClient.connect(uri, function(err, db) {
                 item: "postcard", qty: 45, status: "A",
                 size: {h: 10, w: 15.25, uom: "cm"}, tags: ["blue"]
             }
+
         ]).then(function (result) {
             // process result
             var cursor = db.collection('inventory').find({
@@ -72,6 +50,7 @@ MongoClient.connect(uri, function(err, db) {
             });
             console.log(result);
         });
+
     }
     db.close();
-});
+});*/
