@@ -32,8 +32,9 @@
             }).done(function(data){
                 console.log("finished logging in.");
                 document.getElementById("loginoutput").innerHTML = "username: " + usertext;
+                var outstring = "";
                 if(data.todo_list.length != 0) {
-                    var outstring = "";
+
                     for(x in data.todo_list)
                         outstring += data.todo_list[x] + '\n';
                     document.getElementById("listoutput").innerHTML = outstring;

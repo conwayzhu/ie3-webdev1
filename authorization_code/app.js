@@ -142,8 +142,8 @@ app.get('/refresh_token', function(req, res) {
   });
 });
 
+//currently not used in app, but may be useful later
 app.get('/get_track',function(req,res) {
-
 
   var access_token = req.query.access_token;
 
@@ -163,6 +163,161 @@ app.get('/get_track',function(req,res) {
     );
   });
 
+});
+
+var mongoose = require('mongoose');
+
+var username = "ieeejasonliu";
+var pword = "kappa123";
+var uri = "mongodb://"+username+":"+pword+"@ds121896.mlab.com:21896/ieeespotify";
+
+mongoose.connect(uri);
+
+var db = mongoose.connection;
+var Schema = mongoose.Schema;
+db.on('error', console.error.bind(console,'connection error:'));
+db.once('open', function() {
+    console.log('connected to ' + username);
+});
+
+var trackSchema = new Schema({
+    track: Object,
+    listOfStrings: [String]
+});
+
+var dbEntrySchema = new Schema({
+    username: String,
+    userID: String,
+    listOfTracks: [trackSchema]
+});
+var DBEntry = mongoose.model('DBEntry',dbEntrySchema);
+
+function addNewEntry(newusername,newuserID) {
+    var newEntry = new DBEntry();
+    newEntry.username = newusername;
+    newEntry.userID = newuserID;
+    newEntry.listOfTracks = [];
+    newEntry.save(function(err){
+        if(err) return console.log(err);
+    });
+    return newEntry;
+}
+
+app.get('/dblogin', function(req,res){
+    var userlogin = req.query.username;
+    var userID = req.query.userID;
+
+    console.log("received userlogin info: " + userlogin);
+    DBEntry.find({username: userlogin, userID: userID}, function(err, doc) {
+        if(err) return console.log(err);
+        if(doc.length == 0) {
+            console.log("user does not currently exist. attempting to create");
+            var newEntry = addNewEntry(userlogin,userID);
+            res.send({
+                'trackList' : newEntry.listOfTracks
+            });
+        }
+        else {
+            console.log("user found");
+            res.send({
+                'trackList' : doc[0].listOfTracks
+            });
+        }
+    });
+
+
+});
+
+app.get('/add_new_track', function(req,res){
+    var newTrack = req.query.newTrack;
+    var userlogin = req.query.username;
+    var userID = req.query.userID;
+    var access_token = req.query.access_token;
+
+    var options = {
+        url: 'https://api.spotify.com/v1/tracks/'+newTrack,
+        headers: { 'Authorization': 'Bearer ' + access_token },
+        json: true
+    };
+
+    request.get(options, function(error, response, body) {
+        if(error) {
+            res.send({
+                'err': ['error occured in getting track']
+            });
+            return;
+
+        }
+        if(body.hasOwnProperty("error")) {
+
+            res.send({
+                'err': [body.error.message]
+            });
+            return;
+
+        }
+        console.log("Track was obtained");
+        newTrack = body;
+
+        DBEntry.findOne({username:userlogin, userID: userID},function(err, doc){
+            if(err) return console.log(err);
+
+            if(doc === null) {
+                res.send({
+                    'err': ["You must be logged in to access."]
+                });
+                return;
+            }
+
+            if(doc.listOfTracks.find(function(x){return x.track.uri == newTrack.uri})=== undefined)
+                doc.listOfTracks.push({track: newTrack, listOfStrings: []});
+
+            doc.save(function(err){
+                if(err) return console.log(err);
+                console.log("update successful");
+            });
+            res.send({
+                'trackList': doc.listOfTracks
+            });
+        });
+    });
+
+});
+
+app.get('/associate_word',function(req,res){
+    var userlogin = req.query.username,
+        userID = req.query.userID,
+        trackuri = req.query.current_track_uri,
+        new_word = req.query.new_word,
+        access_token = req.query.access_token;
+
+    DBEntry.findOne({username:userlogin, userID: userID},function(err, doc){
+        if(err) return console.log(err);
+
+        if(doc === null) {
+            res.send({
+                'listOfStrings': ["You must be logged in to access."]
+            });
+            return;
+        }
+
+        var idx = doc.listOfTracks.findIndex(function(element) {
+            console.log(element.track.uri + " " + trackuri);
+            return element.track.uri == trackuri});
+        if(idx != -1)
+            doc.listOfTracks[idx].listOfStrings.push(new_word);
+        console.log(idx);
+
+        doc.save(function(err){
+            if(err)
+                return console.log(err);
+            else
+                console.log("update successful");
+        });
+        res.send({
+            'listOfStrings': doc.listOfTracks[idx].listOfStrings
+        });
+    });
 
 });
 
