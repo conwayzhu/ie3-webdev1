@@ -166,6 +166,7 @@ app.get('/get_track',function(req,res) {
 });
 
 var mongoose = require('mongoose');
+var hasher = require("./hasher");
 
 var username = "ieeejasonliu";
 var pword = "kappa123";
@@ -188,6 +189,7 @@ var trackSchema = new Schema({
 var dbEntrySchema = new Schema({
     username: String,
     userID: String,
+    salt: String,
     listOfTracks: [trackSchema]
 });
 var DBEntry = mongoose.model('DBEntry',dbEntrySchema);
@@ -196,6 +198,7 @@ function addNewEntry(newusername,newuserID) {
     var newEntry = new DBEntry();
     newEntry.username = newusername;
     newEntry.userID = newuserID;
+    newEntry.salt = hasher.genString(16);
     newEntry.listOfTracks = [];
     newEntry.save(function(err){
         if(err) return console.log(err);
